@@ -1,166 +1,197 @@
 # Codex Rate Limit Monitor
 
-A Visual Studio Code/Cursor/Windsurf extension for monitoring OPENAI Codex rate limits in real-time.
+A Visual Studio Code, Cursor, and Windsurf extension that shows OpenAI Codex
+rate-limit usage directly in the status bar and a detailed panel.
 
 ## Features
 
-- **Status Bar Display**: Shows 5-hour and weekly usage percentages directly in the VSCode status bar
-- **Color-coded Indicators**: Visual warnings when approaching rate limits
-- **Detailed View**: Click the status bar to see comprehensive rate limit information
-- **Automatic Updates**: Refreshes every 10 seconds to keep data current
-- **TUI-style Interface**: Familiar progress bars similar to the Python CLI tool
+- Shows 5-hour and weekly Codex usage percentages in the status bar.
+- Uses configurable warning and critical colors for the status bar and detail
+  view.
+- Opens a detailed panel with reset times, time progress, and token usage.
+- Refreshes automatically every 10 seconds by default and pauses while the
+  window is unfocused.
+- Handles current Codex data formats by combining session files with the local
+  `codex app-server` fallback when needed.
+- Can optionally show a short rate-limit source label directly in the status
+  bar.
+- Formats Output channel entries with explicit log levels such as `INFO`,
+  `WARN`, and `ERROR`.
+- Shows the active rate-limit source in the tooltip and detail view so you can
+  verify whether values came from live session data, the app-server fallback,
+  or a session snapshot fallback.
 
 ## Installation
 
-For most users, simply search for "Codex Rate Limit Monitor" in your editor's extension marketplace and install it directly.
+For most users, install the extension from the editor marketplace.
 
-### Package and Install the Extension
+### Build and install locally
 
-#### Step 1: Install VSCE (VSCode Extension Manager)
+Prerequisites:
+
+- Visual Studio Code 1.96.0 or newer
+- Node.js for local development
+
+Node.js 20 or newer is recommended when packaging with recent versions of
+`@vscode/vsce`.
+
+Build a VSIX locally:
+
 ```bash
-npm install -g @vscode/vsce
-```
-
-#### Step 2: Package the Extension
-```bash
-# Navigate to the extension directory
 cd codex-ratelimit-vscode
-
-# Install dependencies and compile
-npm install
-npm run compile
-
-# Package into .vsix file
-vsce package
+npm ci
+npm run package:vsix
 ```
 
-This creates a `codex-ratelimit-X.X.X.vsix` file.
+Install the generated VSIX:
 
-#### Step 3: Install the Packaged Extension
-
-**Option A: Using VSCode UI**
-1. Open VSCode
-2. Go to Extensions panel (`Ctrl+Shift+X` or `Cmd+Shift+X`)
-3. Click the `...` menu → "Install from VSIX..."
-4. Select the `.vsix` file you created
-
-**Option B: Using Command Line**
 ```bash
-code --install-extension codex-ratelimit-X.X.X.vsix
+code --install-extension codex-ratelimit-<version>.vsix
 ```
 
-**Option C: Using VSCode Command Palette**
-1. Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on Mac)
-2. Type "Extensions: Install from VSIX..."
-3. Select the `.vsix` file
-
-#### Step 4: Reload VSCode
-After installation, reload VSCode window (`Ctrl+Shift+P` → "Developer: Reload Window") to activate the extension.
+After installation, reload the VS Code window.
 
 ## Usage
 
-### Status Bar
+### Status bar
 
-The extension displays rate limit information in the VSCode status bar:
+The extension displays rate-limit information in the status bar:
 
-```
+```text
 ⚡ 5H: 45% | Weekly: 23%
 ```
 
-- **5H**: 5-hour session usage percentage
-- **Weekly**: Weekly limit usage percentage
-- Colors change based on usage levels (green → yellow → red)
+If you enable the optional source indicator, it can look like this:
 
-### Detailed View
+```text
+⚡ API | 5H: 45% | Weekly: 23%
+```
 
-Click the status bar item or use the command `Codex Rate Limit: Show Details` to open a detailed view showing:
+- `5H` is the 5-hour session usage percentage.
+- `Weekly` is the weekly usage percentage.
+- Colors follow the configured warning and critical thresholds.
+- Optional source labels are `Live` for direct session data, `API` for the
+  `codex app-server` fallback, and `LS` for the latest session snapshot
+  fallback.
 
-- 5-hour session progress (time and usage)
-- Weekly limit progress (time and usage)
-- Reset times and outdated status indicators
-- Token usage summary
+### Detailed view
 
-## Companion CLI Utility
+Click the status bar item or run `Codex Rate Limit: Show Details` to open a
+detailed view with:
 
-Prefer a terminal workflow? The [codex-ratelimit](https://github.com/xiangz19/codex-ratelimit) project provides a single-file Python CLI/TUI tool that mirrors the progress bars and live rate-limit updates used here.
+- 5-hour session time and usage progress
+- Weekly time and usage progress
+- The active rate-limit source and source detail
+- Reset times and outdated indicators
+- Total and last token usage summaries
+
+### Output logs
+
+The `Codex Rate Limit` Output channel now prefixes entries with a level label:
+
+```text
+[2026-03-08T14:59:50.000Z] [INFO ] Using live session rate limits from: ...
+[2026-03-08T15:00:00.000Z] [INFO ] Using Codex app-server fallback rate limits from: ...
+[2026-03-08T15:00:10.000Z] [WARN ] No rate limit data found: ...
+[2026-03-08T15:00:20.000Z] [ERROR] Error during stats update: ...
+```
+
+You can control the minimum level with `codexRatelimit.logLevel`.
+
+## Companion CLI utility
+
+Prefer a terminal workflow? The
+[codex-ratelimit](https://github.com/xiangz19/codex-ratelimit) project provides
+a single-file Python CLI and TUI with a similar live view of Codex rate limits.
 
 ## Commands
 
-- `codex-ratelimit.refreshStats` - Manually refresh rate limit data
-- `codex-ratelimit.showDetails` - Open detailed rate limit view
-- `codex-ratelimit.openSettings` - Open extension settings page
+- `codex-ratelimit.refreshStats` refreshes the displayed rate-limit data.
+- `codex-ratelimit.showDetails` opens the detailed rate-limit panel.
+- `codex-ratelimit.openSettings` opens the extension settings.
 
 ## Configuration
 
-The extension can be configured through VSCode settings:
+The extension exposes these settings:
 
-- `codexRatelimit.enableLogging` - Enable detailed logging for debugging
-- `codexRatelimit.enableStatusBarColors` - Enable color-coded status bar
-- `codexRatelimit.warningThreshold` - Usage percentage for warning colors (default: 70%)
-- `codexRatelimit.refreshInterval` - How often to refresh stats in seconds (5-3600, default: 10)
-- `codexRatelimit.sessionPath` - Custom path to Codex sessions directory
+- `codexRatelimit.enableLogging` is a legacy compatibility toggle for older
+  setups that have not switched to `codexRatelimit.logLevel` yet.
+- `codexRatelimit.logLevel` sets the minimum output level: `off`, `error`,
+  `warn`, `info`, or `debug`.
+- `codexRatelimit.showOutputOnError` opens the Output panel automatically when
+  an error is logged.
+- `codexRatelimit.color.enable` enables colorized status bar text and progress
+  bars.
+- `codexRatelimit.color.warningColor` sets the warning color.
+- `codexRatelimit.color.warningThreshold` sets the warning threshold in percent.
+- `codexRatelimit.color.criticalColor` sets the critical color.
+- `codexRatelimit.color.criticalThreshold` sets the critical threshold in
+  percent.
+- `codexRatelimit.refreshInterval` controls the refresh interval in seconds.
+- `codexRatelimit.sessionPath` overrides the default Codex sessions path.
+- `codexRatelimit.statusBar.sourceIndicator` controls whether the status bar
+  shows no source label, a short label, or a full label.
 
-## How It Works
+## How it works
 
-The extension monitors Codex session files located at `~/.codex/sessions/` by default. It:
+The extension reads Codex data locally in this order:
 
-1. Searches for the latest `token_count` events in session files using a two-phase, modification-time-based scan (fast path checks today's files from the last hour, fallback walks all session files from the previous seven days by most recent edit)
-2. Extracts rate limit information (5-hour and weekly limits)
-3. Calculates usage percentages and time progress
-4. Updates the status bar every 10 seconds
-5. Handles outdated data and error states gracefully
+1. It scans recent `~/.codex/sessions/.../rollout-*.jsonl` files and finds the
+   latest `token_count` event for token usage.
+2. If that latest `token_count` event still contains `rate_limits`, it uses
+   them directly.
+3. If the current local setup uses the default Codex sessions path and the
+   latest `token_count` omits `rate_limits`, it queries the local
+   `codex app-server` with `account/rateLimits/read`.
+4. If the app-server request fails or returns no usable snapshot, it reuses the
+   newest session record that still contains `rate_limits`.
+5. It calculates reset times, time progress, and usage progress for the UI.
+
+The tooltip and detail view show the active rate-limit source, and the status
+bar can optionally show a short source label. That makes it easy to confirm
+whether the extension is using the app-server fallback or only an older
+session snapshot.
+
+If you configure a custom `codexRatelimit.sessionPath`, the extension stays
+session-file based and skips the local app-server fallback.
 
 ## Development
 
-### Requirements
-
-- Visual Studio Code 1.96.0 or higher
-- Node.js for development
-
-### Setup for Development and Testing
-
-1. **Open the extension directory in VSCode**
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-3. **Compile TypeScript:**
-   ```bash
-   npm run compile
-   ```
-4. **Press `F5`** to launch a new Extension Development Host window
-5. The extension will activate automatically
-
-### Development Workflow
+### Setup
 
 ```bash
-# Watch for changes (auto-recompile on file changes)
-npm run watch
-
-# Manual compilation when needed
+npm ci
 npm run compile
+npm run package:vsix
+```
 
-# Run the extension for testing
-# Press F5 in VSCode to launch Extension Development Host
+Press `F5` in VS Code to launch an Extension Development Host window.
+
+### Workflow
+
+```bash
+npm run watch
+npm run compile
 ```
 
 ## Architecture
 
-```
+```text
 src/
 ├── extension.ts           # Main extension entry point
 ├── services/
-│   ├── ratelimitParser.ts # Core logic for parsing session files
+│   ├── codexAppServer.ts  # Local Codex app-server fallback for live rate limits
+│   ├── ratelimitParser.ts # Session discovery and rate-limit aggregation
 │   └── logger.ts          # Logging utilities
 ├── handlers/
 │   ├── statusBar.ts       # Status bar management
-│   └── webView.ts         # Detailed view WebView
+│   └── webView.ts         # Detailed view webview
 ├── utils/
-│   └── updateStats.ts     # Stats update and refresh logic
+│   └── updateStats.ts     # Refresh scheduling and update flow
 └── interfaces/
-    └── types.ts           # TypeScript type definitions
+    └── types.ts           # Shared TypeScript types
 ```
 
 ## License
 
-MIT License
+MIT

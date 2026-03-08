@@ -52,10 +52,10 @@ export class RateLimitWebView {
     // Handle messages from the webview
     this._panel.webview.onDidReceiveMessage(
       async (message) => {
-        log(`WebView received message: ${JSON.stringify(message)}`, true); // Force log
+        log(`WebView received message: ${JSON.stringify(message)}`, 'debug');
         switch (message.command) {
           case 'refresh':
-            log('WebView refresh triggered', true); // Force log
+            log('WebView refresh triggered', 'info');
             await this._update();
             return;
         }
@@ -96,10 +96,10 @@ export class RateLimitWebView {
       }
 
       this._panel.webview.html = this._getHtml(webview, result.data);
-      log('WebView updated successfully');
+      log('WebView updated successfully', 'debug');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      log(`Error updating WebView: ${errorMessage}`, true);
+      log(`Error updating WebView: ${errorMessage}`, 'error');
       this._panel.webview.html = this._getErrorHtml(errorMessage);
     }
   }
@@ -109,6 +109,10 @@ export class RateLimitWebView {
     const config = vscode.workspace.getConfiguration('codexRatelimit');
     const warningColor = config.get<string>('color.warningColor', '#f3d898');
     const criticalColor = config.get<string>('color.criticalColor', '#eca7a7');
+    const sourceLabel = this._escapeHtml(data.rate_limit_source?.label || 'Unavailable');
+    const sourceDetail = data.rate_limit_source?.detail
+      ? this._escapeHtml(data.rate_limit_source.detail)
+      : '';
 
     return `<!DOCTYPE html>
     <html lang="en">
@@ -133,6 +137,12 @@ export class RateLimitWebView {
         </div>
 
         ${this._renderProgressSection(data)}
+
+        <div class="token-usage">
+          <h3>Source</h3>
+          <div class="token-line"><strong>Rate-limit source:</strong> ${sourceLabel}</div>
+          ${sourceDetail ? `<div class="token-line"><strong>Source detail:</strong> <code>${sourceDetail}</code></div>` : ''}
+        </div>
 
         <div class="token-usage">
           <h3>📊 Token Usage Summary</h3>
@@ -262,6 +272,15 @@ export class RateLimitWebView {
     } else {
       return 'low';
     }
+  }
+
+  private _escapeHtml(value: string): string {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 
   private _getErrorHtml(errorMessage: string): string {
