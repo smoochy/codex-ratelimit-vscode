@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-- Nothing yet.
+- Nothing to see here
 
 ## [0.13.0] - 2026-03-08
 
@@ -27,6 +27,9 @@ All notable changes to this project will be documented in this file.
   per-candidate failure logs when a later fallback candidate succeeds.
 - Support newer absolute reset timestamps such as `reset_at` alongside the
   historical session formats.
+- Detect current bundled Codex executable layouts on macOS and Windows more
+  reliably when the app-server fallback is needed, including `macos-*` and
+  `windows-aarch64` directory names used by recent OpenAI extension builds.
 
 ## [0.12.0] - 2025-11-08
 

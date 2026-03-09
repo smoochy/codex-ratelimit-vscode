@@ -147,6 +147,12 @@ The extension reads Codex data locally in this order:
    newest session record that still contains `rate_limits`.
 5. It calculates reset times, time progress, and usage progress for the UI.
 
+When the app-server fallback uses the bundled Codex executable from the OpenAI
+extension, the lookup supports the current platform directory layout such as
+`macos-aarch64`, `macos-x86_64`, `linux-aarch64`, `linux-x86_64`,
+`windows-aarch64`, and `windows-x86_64` before falling back to `codex` on
+`PATH`.
+
 The tooltip and detail view show the active rate-limit source, and the status
 bar can optionally show a short source label. That makes it easy to confirm
 whether the extension is using the app-server fallback or only an older

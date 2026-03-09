@@ -99,11 +99,15 @@ function getBundledCodexExecutableCandidates(): string[] {
     case 'win32':
       candidates.push(
         path.join(binRoot, 'windows-x86_64', 'codex.exe'),
+        path.join(binRoot, 'windows-aarch64', 'codex.exe'),
         path.join(binRoot, 'windows-arm64', 'codex.exe')
       );
       break;
     case 'darwin':
       candidates.push(
+        path.join(binRoot, process.arch === 'arm64' ? 'macos-aarch64' : 'macos-x86_64', 'codex'),
+        path.join(binRoot, 'macos-aarch64', 'codex'),
+        path.join(binRoot, 'macos-x86_64', 'codex'),
         path.join(binRoot, process.arch === 'arm64' ? 'darwin-aarch64' : 'darwin-x86_64', 'codex'),
         path.join(binRoot, 'darwin-aarch64', 'codex'),
         path.join(binRoot, 'darwin-x86_64', 'codex')
