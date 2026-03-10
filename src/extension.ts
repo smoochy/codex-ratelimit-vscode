@@ -9,11 +9,9 @@ let extensionContext: vscode.ExtensionContext;
 
 export function activate(context: vscode.ExtensionContext) {
   try {
-    log('Extension activation started');
-    extensionContext = context;
-
-    // Initialize logging
     initializeLogging();
+    log('Extension activation started', 'info');
+    extensionContext = context;
 
     // Create status bar item
     statusBarItem = createStatusBarItem();
@@ -21,17 +19,17 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Register commands
     const refreshCommand = vscode.commands.registerCommand('codex-ratelimit.refreshStats', async () => {
-      log('Manual refresh triggered', true); // Force log as error to ensure it shows
+      log('Manual refresh triggered', 'info');
       await updateStats();
     });
 
     const showDetailsCommand = vscode.commands.registerCommand('codex-ratelimit.showDetails', () => {
-      log('Show details command triggered');
+      log('Show details command triggered', 'debug');
       RateLimitWebView.createOrShow(context.extensionUri);
     });
 
     const openSettingsCommand = vscode.commands.registerCommand('codex-ratelimit.openSettings', async () => {
-      log('Open settings command triggered');
+      log('Open settings command triggered', 'debug');
       await vscode.commands.executeCommand('workbench.action.openSettings', '@ext:xiangz19.codex-ratelimit');
     });
 
@@ -43,7 +41,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Add configuration change listener
     const configListener = vscode.workspace.onDidChangeConfiguration(async (e) => {
       if (e.affectsConfiguration('codexRatelimit')) {
-        log('Configuration changed, restarting timer with new interval...');
+        log('Configuration changed, restarting timer with new interval...', 'info');
         if (e.affectsConfiguration('codexRatelimit.refreshInterval')) {
           // Restart timer with new interval
           startRefreshTimer();
@@ -66,11 +64,11 @@ export function activate(context: vscode.ExtensionContext) {
     // Start the refresh timer and do initial update
     startRefreshTimer();
 
-    log('Extension activation completed successfully');
+    log('Extension activation completed successfully', 'info');
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    log(`Failed to activate extension: ${errorMessage}`, true);
+    log(`Failed to activate extension: ${errorMessage}`, 'error');
     vscode.window.showErrorMessage(`Codex Rate Limit extension failed to activate: ${errorMessage}`);
     throw error;
   }
@@ -78,7 +76,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 export function deactivate() {
   try {
-    log('Extension deactivation started');
+    log('Extension deactivation started', 'info');
 
     // Clean up timers
     cleanup();
@@ -86,10 +84,10 @@ export function deactivate() {
     // Dispose logger
     disposeLogger();
 
-    log('Extension deactivation completed successfully');
+    log('Extension deactivation completed successfully', 'info');
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    log(`Failed to deactivate extension cleanly: ${errorMessage}`, true);
+    log(`Failed to deactivate extension cleanly: ${errorMessage}`, 'error');
     throw error;
   }
 }

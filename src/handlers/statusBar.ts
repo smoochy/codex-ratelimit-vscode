@@ -1,11 +1,12 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { RateLimitData } from '../interfaces/types';
 import { log } from '../services/logger';
 
 let statusBarItem: vscode.StatusBarItem;
 
 export function createStatusBarItem(): vscode.StatusBarItem {
-  log('Creating status bar item...');
+  log('Creating status bar item...', 'debug');
   statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   statusBarItem.command = 'codex-ratelimit.showDetails';
   return statusBarItem;
@@ -38,6 +39,44 @@ export function formatRelativeTime(date: Date): string {
   const minutes = date.getMinutes().toString().padStart(2, '0');
   const seconds = date.getSeconds().toString().padStart(2, '0');
   return `${hours}:${minutes}:${seconds}`;
+}
+
+function getRateLimitSourceSummary(data: RateLimitData): { label: string; detail?: string } {
+  if (!data.rate_limit_source) {
+    return { label: 'Unavailable' };
+  }
+
+  const detail = data.rate_limit_source.detail
+    ? path.basename(data.rate_limit_source.detail)
+    : undefined;
+
+  return {
+    label: data.rate_limit_source.label,
+    detail
+  };
+}
+
+function getStatusBarSourceIndicator(data: RateLimitData): string {
+  const config = vscode.workspace.getConfiguration('codexRatelimit');
+  const mode = config.get<'off' | 'compact' | 'full'>(
+    'statusBar.sourceIndicator',
+    'off'
+  );
+
+  if (mode === 'off' || !data.rate_limit_source) {
+    return '';
+  }
+
+  switch (data.rate_limit_source.kind) {
+    case 'token_count':
+      return mode === 'compact' ? 'Live' : 'Live Session';
+    case 'app_server':
+      return mode === 'compact' ? 'API' : 'App Server';
+    case 'session_snapshot':
+      return mode === 'compact' ? 'LS' : 'Last Session';
+    default:
+      return '';
+  }
 }
 
 function createProgressBar(percentage: number, type: 'usage' | 'time', outdated: boolean): string {
@@ -150,12 +189,17 @@ export function createMarkdownTooltip(data: RateLimitData): vscode.MarkdownStrin
 
   const total = data.total_usage;
   const last = data.last_usage;
+  const source = getRateLimitSourceSummary(data);
 
   function formatTokenNumber(num: number): string {
     const numInK = Math.round(num / 1000);
     return numInK.toLocaleString('en-US') + ' K';
   }
 
+  tooltip.appendMarkdown(`**Rate-Limit Source:** ${source.label}\n\n`);
+  if (source.detail) {
+    tooltip.appendMarkdown(`**Source Detail:** \`${source.detail}\`\n\n`);
+  }
   tooltip.appendMarkdown(`**Total:** input ${formatTokenNumber(total.input_tokens)}, cached ${formatTokenNumber(total.cached_input_tokens)}, output ${formatTokenNumber(total.output_tokens)}, reasoning ${formatTokenNumber(total.reasoning_output_tokens)}\n\n`);
   tooltip.appendMarkdown(`**Last:** input ${formatTokenNumber(last.input_tokens)}, cached ${formatTokenNumber(last.cached_input_tokens)}, output ${formatTokenNumber(last.output_tokens)}, reasoning ${formatTokenNumber(last.reasoning_output_tokens)}\n\n`);
 
@@ -174,7 +218,7 @@ export function createMarkdownTooltip(data: RateLimitData): vscode.MarkdownStrin
 
 export function updateStatusBar(data: RateLimitData): void {
   if (!statusBarItem) {
-    log('Status bar item not initialized', true);
+    log('Status bar item not initialized', 'error');
     return;
   }
 
@@ -200,15 +244,18 @@ export function updateStatusBar(data: RateLimitData): void {
     const primaryText = data.primary ? `${Math.round(primaryUsage)}%` : 'N/A';
     const weeklyText = data.secondary ? `${Math.round(weeklyUsage)}%` : 'N/A';
 
-    statusBarItem.text = `⚡ 5H: ${primaryText} | Weekly: ${weeklyText}`;
+    const sourceIndicator = getStatusBarSourceIndicator(data);
+    const sourcePrefix = sourceIndicator ? `${sourceIndicator} | ` : '';
+
+    statusBarItem.text = `⚡ ${sourcePrefix}5H: ${primaryText} | Weekly: ${weeklyText}`;
     statusBarItem.color = getStatusBarColor(maxUsagePercent);
     statusBarItem.tooltip = createMarkdownTooltip(data);
     statusBarItem.show();
 
-    log(`Status bar updated - 5H: ${primaryText}, Weekly: ${weeklyText}`);
+    log(`Status bar updated - 5H: ${primaryText}, Weekly: ${weeklyText}`, 'debug');
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    log(`Error updating status bar: ${errorMessage}`, true);
+    log(`Error updating status bar: ${errorMessage}`, 'error');
 
     statusBarItem.text = '⚡ Codex: Error';
     statusBarItem.color = new vscode.ThemeColor('statusBarItem.errorBackground');
@@ -227,5 +274,5 @@ export function showErrorState(message: string): void {
   statusBarItem.tooltip = new vscode.MarkdownString(`⚠️ ${message}`);
   statusBarItem.show();
 
-  log(`Status bar showing error: ${message}`);
+  log(`Status bar showing error: ${message}`, 'warn');
 }

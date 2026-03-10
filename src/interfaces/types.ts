@@ -11,6 +11,19 @@ export interface RateLimit {
   window_minutes: number;
   resets_in_seconds?: number;
   resets_at?: number;
+  reset_after_seconds?: number;
+  reset_at?: number;
+}
+
+export interface RateLimitWindow {
+  primary?: RateLimit;    // 5-hour limit
+  secondary?: RateLimit;  // Weekly limit
+}
+
+export interface RateLimitSource {
+  kind: 'token_count' | 'app_server' | 'session_snapshot';
+  label: string;
+  detail?: string;
 }
 
 export interface TokenCountPayload {
@@ -19,10 +32,7 @@ export interface TokenCountPayload {
     total_token_usage: TokenUsage | null;
     last_token_usage: TokenUsage | null;
   } | null;
-  rate_limits?: {
-    primary?: RateLimit;    // 5-hour limit
-    secondary?: RateLimit;  // Weekly limit
-  };
+  rate_limits?: RateLimitWindow | null;
 }
 
 export interface EventRecord {
@@ -37,6 +47,7 @@ export interface RateLimitData {
   current_time: Date;
   total_usage: TokenUsage;
   last_usage: TokenUsage;
+  rate_limit_source?: RateLimitSource;
   primary?: {
     used_percent: number;
     time_percent: number;

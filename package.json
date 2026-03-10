@@ -3,7 +3,7 @@
   "displayName": "Codex Rate Limit Monitor",
   "description": "A VSCode extension for monitoring Codex rate limits",
   "license": "MIT",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "publisher": "xiangz19",
   "icon": "icon.png",
   "repository": {
@@ -54,7 +54,28 @@
           "codexRatelimit.enableLogging": {
             "type": "boolean",
             "default": false,
-            "description": "Enable detailed logging for debugging purposes.",
+            "description": "Legacy logging toggle. If enabled and no explicit log level is selected, the effective minimum log level becomes Info.",
+            "deprecationMessage": "Use codexRatelimit.logLevel instead.",
+            "scope": "window"
+          },
+          "codexRatelimit.logLevel": {
+            "type": "string",
+            "default": "warn",
+            "enum": [
+              "off",
+              "error",
+              "warn",
+              "info",
+              "debug"
+            ],
+            "enumDescriptions": [
+              "Disable extension logging.",
+              "Show only error messages.",
+              "Show warnings and errors.",
+              "Show informational messages, warnings, and errors.",
+              "Show all logs, including verbose debug messages."
+            ],
+            "description": "Minimum log level written to the Codex Rate Limit output channel.",
             "scope": "window"
           },
           "codexRatelimit.showOutputOnError": {
@@ -110,6 +131,22 @@
             "maximum": 3600,
             "description": "How often to refresh the stats (in seconds). Minimum 5 seconds, maximum 1 hour.",
             "scope": "window"
+          },
+          "codexRatelimit.statusBar.sourceIndicator": {
+            "type": "string",
+            "default": "off",
+            "enum": [
+              "off",
+              "compact",
+              "full"
+            ],
+            "enumDescriptions": [
+              "Hide the rate-limit source in the status bar.",
+              "Show a short source label such as Live, API, or LS.",
+              "Show a full source label such as Live Session, App Server, or Last Session."
+            ],
+            "description": "Optionally show the active rate-limit source in the status bar.",
+            "scope": "window"
           }
         }
       }
@@ -119,6 +156,7 @@
     "vscode:prepublish": "npm run compile",
     "compile": "npm run typecheck && npm run bundle",
     "bundle": "esbuild src/extension.ts --bundle --platform=node --format=cjs --external:vscode --sourcemap --outfile=out/extension.js --log-level=info",
+    "package:vsix": "node package-vsix.cjs",
     "typecheck": "tsc -p ./ --noEmit",
     "watch": "esbuild src/extension.ts --bundle --platform=node --format=cjs --external:vscode --sourcemap --outfile=out/extension.js --watch",
     "pretest": "npm run compile",

@@ -1,34 +1,5 @@
-# Source files (compiled output is in /out)
+package-vsix.cjs
+.gitignore
+node_modules/**
 src/**
 tsconfig.json
-.gitignore
-
-# Development files
-.vscode/**
-npm-debug.log*
-*.vsix
-
-# Dependency sources (extension bundle is self-contained)
-node_modules/**
-
-# Build artifacts
-*.map
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# IDE files
-*.swp
-*.swo
-
-# Logs
-logs
-*.log
-
-# Testing
-test/**
-coverage/**
-
-# Git
-.git/**
